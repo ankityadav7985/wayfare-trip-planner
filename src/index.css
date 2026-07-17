@@ -1,0 +1,627 @@
+/* ---------------------------------------------------------------------
+   Design tokens
+   Subject: a trip planner. The visual world is travel documents -- boarding
+   passes, luggage tags, ticket stubs -- rendered as a deep "harbor at dusk"
+   backdrop with warm parchment ticket cards floating on it. The one bold,
+   repeated signature is the perforated "tear line" divider, standing in for
+   the edge of a ticket stub throughout the UI.
+   --------------------------------------------------------------------- */
+:root {
+  --color-bg: #0f333a;
+  --color-bg-deep: #0a262c;
+  --color-surface: #fbf6ec;
+  --color-surface-dim: #f2ead9;
+  --color-ink: #16262a;
+  --color-muted: #5c7175;
+  --color-muted-on-dark: #9db8bc;
+  --color-line: #d9cfb4;
+  --color-accent: #de5b2c;
+  --color-accent-ink: #ffffff;
+  --color-gold: #c99a2e;
+
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Work Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  --radius-card: 14px;
+  --radius-control: 8px;
+  --shadow-card: 0 18px 40px -22px rgba(6, 20, 24, 0.55);
+
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: radial-gradient(ellipse at top, var(--color-bg) 0%, var(--color-bg-deep) 70%);
+  background-attachment: fixed;
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+button,
+input,
+textarea {
+  font-family: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   App shell
+   --------------------------------------------------------------------- */
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 28px 18px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-height: 100vh;
+}
+
+.app__header {
+  padding: 6px 4px 0;
+}
+
+.app__wordmark {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-size: 2rem;
+  letter-spacing: 0.01em;
+  color: var(--color-surface);
+}
+
+.app__tagline {
+  margin: 4px 0 0;
+  color: var(--color-muted-on-dark);
+  font-size: 0.95rem;
+}
+
+.app__main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.app__result {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.app__footer {
+  margin-top: auto;
+  padding-top: 24px;
+  color: var(--color-muted-on-dark);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-align: center;
+  opacity: 0.75;
+}
+
+/* ---------------------------------------------------------------------
+   Trip form -- the "ticket window"
+   --------------------------------------------------------------------- */
+.trip-form {
+  background: var(--color-surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.trip-form__label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--color-muted);
+}
+
+.trip-form__textarea {
+  resize: vertical;
+  min-height: 84px;
+  border: 1.5px solid var(--color-line);
+  border-radius: var(--radius-control);
+  padding: 12px 14px;
+  font-size: 1rem;
+  line-height: 1.45;
+  color: var(--color-ink);
+  background: #fff;
+}
+
+.trip-form__textarea:disabled {
+  opacity: 0.6;
+}
+
+.trip-form__row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.trip-form__examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.trip-form__chip {
+  border: 1px solid var(--color-line);
+  background: var(--color-surface-dim);
+  color: var(--color-muted);
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.trip-form__chip:hover:not(:disabled) {
+  border-color: var(--color-gold);
+  color: var(--color-ink);
+}
+
+.trip-form__submit {
+  align-self: flex-end;
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  border: none;
+  border-radius: var(--radius-control);
+  padding: 12px 22px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+}
+
+.trip-form__submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (min-width: 640px) {
+  .trip-form__row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .trip-form__submit {
+    width: auto;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   State panels: empty / loading / error (full panel -- only shown when
+   there is no itinerary yet to keep on screen)
+   --------------------------------------------------------------------- */
+.state-panel {
+  background: var(--color-surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 40px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.state-panel__mark {
+  font-size: 1.4rem;
+  color: var(--color-gold);
+}
+
+.state-panel__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.25rem;
+  margin: 4px 0 0;
+}
+
+.state-panel__text {
+  color: var(--color-muted);
+  max-width: 42ch;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.state-panel--error .state-panel__title {
+  color: #9c3a1c;
+}
+
+.state-panel__retry {
+  margin-top: 10px;
+  background: var(--color-ink);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-control);
+  padding: 10px 20px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* Loading: a flight path of dashes pulsing in sequence -- restrained, not decorative */
+.loading-path {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+.loading-path span {
+  width: 18px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--color-gold);
+  opacity: 0.25;
+  animation: dash-pulse 1.4s ease-in-out infinite;
+}
+.loading-path span:nth-child(2) { animation-delay: 0.12s; }
+.loading-path span:nth-child(3) { animation-delay: 0.24s; }
+.loading-path span:nth-child(4) { animation-delay: 0.36s; }
+.loading-path span:nth-child(5) { animation-delay: 0.48s; }
+
+@keyframes dash-pulse {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}
+
+/* ---------------------------------------------------------------------
+   Inline banner: shown above an existing itinerary during a regenerate,
+   so a slow or failed request never hides the plan the user already has
+   --------------------------------------------------------------------- */
+.inline-banner {
+  border-radius: var(--radius-control);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.88rem;
+  background: var(--color-surface-dim);
+  color: var(--color-ink);
+  border: 1px solid var(--color-line);
+}
+
+.inline-banner--error {
+  background: #fbe9e2;
+  border-color: #eab798;
+  color: #7a2c14;
+}
+
+.inline-banner__retry {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  padding: 5px 11px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: inherit;
+}
+
+/* ---------------------------------------------------------------------
+   Itinerary -- the "ticket booklet"
+   --------------------------------------------------------------------- */
+.itinerary {
+  background: var(--color-surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.itinerary__header {
+  padding: 22px 20px 6px;
+}
+
+.itinerary__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.itinerary__summary {
+  margin: 6px 0 0;
+  color: var(--color-muted);
+  line-height: 1.5;
+}
+
+.day-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 14px 20px 0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.day-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.day-tabs__tab {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  background: var(--color-surface-dim);
+  border: 1px solid var(--color-line);
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  padding: 8px 14px 10px;
+  cursor: pointer;
+  color: var(--color-muted);
+}
+
+.day-tabs__tab--active {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border-color: var(--color-gold);
+}
+
+.day-tabs__num {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  color: var(--color-gold);
+}
+
+.day-tabs__label {
+  font-size: 0.86rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* The signature element: a perforated tear line, echoing where a ticket
+   stub would be torn from the rest of the booklet. */
+.itinerary__tear {
+  height: 0;
+  border-top: 2px dashed var(--color-line);
+  margin: 0 20px;
+  position: relative;
+}
+.itinerary__tear::before,
+.itinerary__tear::after {
+  content: '';
+  position: absolute;
+  top: -7px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--color-bg-deep) 60%, transparent 62%);
+  opacity: 0.06;
+}
+.itinerary__tear::before { left: -27px; }
+.itinerary__tear::after { right: -27px; }
+
+.itinerary__empty-day {
+  padding: 18px 20px 0;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+/* ---------------------------------------------------------------------
+   Stops
+   --------------------------------------------------------------------- */
+.stop-list {
+  list-style: none;
+  margin: 0;
+  padding: 10px 20px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stop {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  padding: 10px 10px 10px 6px;
+  background: #fff;
+}
+
+.stop__order {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.stop__move {
+  border: none;
+  background: transparent;
+  color: var(--color-muted);
+  padding: 3px;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+}
+
+.stop__move:hover:not(:disabled) {
+  background: var(--color-surface-dim);
+  color: var(--color-ink);
+}
+
+.stop__move:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.stop__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.stop__header {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  background: none;
+  border: none;
+  padding: 4px 0;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+.stop__time {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--color-gold);
+  flex-shrink: 0;
+}
+
+.stop__name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.stop__chevron {
+  color: var(--color-muted);
+  flex-shrink: 0;
+  display: flex;
+}
+
+.stop__description {
+  margin: 0 0 4px;
+  color: var(--color-muted);
+  font-size: 0.87rem;
+  line-height: 1.5;
+}
+
+.stop__remove {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-muted);
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.stop__remove:hover {
+  background: #fbe9e2;
+  color: #9c3a1c;
+}
+
+/* ---------------------------------------------------------------------
+   Add stop
+   --------------------------------------------------------------------- */
+.add-stop__toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 20px 20px;
+  background: none;
+  border: 1.5px dashed var(--color-line);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: var(--color-muted);
+  cursor: pointer;
+  font-size: 0.86rem;
+  width: calc(100% - 40px);
+  justify-content: center;
+}
+
+.add-stop__toggle:hover {
+  border-color: var(--color-gold);
+  color: var(--color-ink);
+}
+
+.add-stop {
+  margin: 6px 20px 20px;
+  border: 1.5px solid var(--color-line);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--color-surface-dim);
+}
+
+.add-stop__row {
+  display: flex;
+  gap: 8px;
+}
+
+.add-stop__input {
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+  padding: 9px 11px;
+  font-size: 0.9rem;
+  background: #fff;
+  color: var(--color-ink);
+  width: 100%;
+}
+
+.add-stop__input--time {
+  flex: 0 0 34%;
+}
+
+.add-stop__input--name {
+  flex: 1;
+}
+
+.add-stop__input--desc {
+  resize: vertical;
+}
+
+.add-stop__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.add-stop__cancel {
+  background: none;
+  border: none;
+  color: var(--color-muted);
+  cursor: pointer;
+  padding: 8px 10px;
+}
+
+.add-stop__save {
+  background: var(--color-ink);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.add-stop__save:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
