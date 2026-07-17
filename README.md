@@ -1,5 +1,7 @@
 # ✈️ Wayfare – AI Trip Planner
 
+https://drive.google.com/file/d/19Hz7Hf3INf1iYxsI_4wTKi2XNzA5uxT1/view?usp=sharing
+
 Wayfare is an AI-powered trip planner that converts a natural language travel description into a structured, editable day-by-day itinerary.
 
 ## Features
